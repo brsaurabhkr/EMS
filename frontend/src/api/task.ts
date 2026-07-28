@@ -19,8 +19,7 @@ export type CreateTaskResponse = {
   success: boolean;
   message: string;
   data: {
-    insertId: number;
-    affectedRows?: number;
+    id: number;
   };
 };
 

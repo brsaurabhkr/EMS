@@ -1,83 +1,86 @@
 const db = require("../config/db.config");
 
-// Create Employee
-const createEmployee = (employee, callback) => {
+const findAll = (callback) => {
     const sql = `
-        INSERT INTO employee
-        (id, employee_code, employee_name, designation_id, email, mobile, status)
+        SELECT e.employee_id AS id, e.employee_code, e.employee_name,
+               e.designation_id, e.email, e.mobile, e.status, d.designation_name
+        FROM employees e
+        JOIN designations d
+        ON e.designation_id = d.designation_id
+    `;
+
+    db.query(sql, callback);
+};
+
+const findById = (id, callback) => {
+    db.query(
+        "SELECT employee_id AS id, employee_code, employee_name, designation_id, email, mobile, status FROM employees WHERE employee_id=?",
+        [id],
+        callback
+    );
+};
+
+const create = (data, callback) => {
+    const sql = `
+        INSERT INTO employees
+        (employee_id, employee_code, employee_name, designation_id, email, mobile, status)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
         sql,
         [
-            employee.id,
-            employee.employee_code,
-            employee.employee_name,
-            employee.designation_id,
-            employee.email,
-            employee.mobile,
-            employee.status,
+            data.id,
+            data.employee_code,
+            data.employee_name,
+            data.designation_id,
+            data.email,
+            data.mobile,
+            data.status,
         ],
         callback
     );
 };
 
- 
-const getAllEmployees = (callback) => {
+const update = (id, data, callback) => {
     const sql = `
-        SELECT
-            e.id,
-            e.employee_code,
-            e.employee_name,
-            e.designation_id,
-            d.designation_name AS designation,
-            e.email,
-            e.mobile,
-            e.status
-        FROM employee e
-        LEFT JOIN designations d ON e.designation_id = d.id
-    `;
-    db.query(sql, callback);
-};
-
-// Update Employee
-const updateEmployee = (id, employee, callback) => {
-    const sql = `
-        UPDATE employee
-        SET employee_code = ?,
-            employee_name = ?,
-            designation_id = ?,
-            email = ?,
-            mobile = ?,
-            status = ?
-        WHERE id = ?
+        UPDATE employees
+        SET employee_code=?,
+            employee_name=?,
+            designation_id=?,
+            email=?,
+            mobile=?,
+            status=?
+        WHERE employee_id=?
     `;
 
     db.query(
         sql,
         [
-            employee.employee_code,
-            employee.employee_name,
-            employee.designation_id,
-            employee.email,
-            employee.mobile,
-            employee.status,
+            data.employee_code,
+            data.employee_name,
+            data.designation_id,
+            data.email,
+            data.mobile,
+            data.status,
             id,
         ],
         callback
     );
 };
 
-// Delete Employee
-const deleteEmployee = (id, callback) => {
-    const sql = "DELETE FROM employee WHERE id = ?";
-    db.query(sql, [id], callback);
+const remove = (id, callback) => {
+    db.query(
+        "DELETE FROM employees WHERE employee_id=?",
+        [id],
+        callback
+    );
 };
 
 module.exports = {
-    createEmployee,
-    getAllEmployees,
-    updateEmployee,
-    deleteEmployee,
+    findAll,
+    findById,
+    create,
+    update,
+    delete: remove,
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 
@@ -16,6 +16,9 @@ import Employee from "./pages/Employees/EmployeeList";
 import Tasks from "./pages/Tasks/TaskList";
 import { Toaster } from "./components/ui/sonner";
 import { useEmployeeStore } from "./store/employeeStore";
+import { useDesignationStore } from "./store/designationStore";
+import { getEmployees } from "./api/employee";
+import { getDesignations } from "./api/designation";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,7 +27,39 @@ function App() {
   const hideLayout = ["/login", "/register", "/forgot-password"].includes(location.pathname);
 
   
-  const { employees } = useEmployeeStore();
+  const { employees, setEmployees } = useEmployeeStore();
+  const { setDesignations } = useDesignationStore();
+
+  useEffect(() => {
+    getDesignations()
+      .then((response) => {
+        setDesignations(response.data.data.map((item) => ({
+          id: item.id,
+          name: item.designation_name,
+          description: item.description,
+          status: item.status,
+        })));
+      })
+      .catch((error) => console.error("Failed to load designations", error));
+
+    getEmployees()
+      .then((response) => {
+        setEmployees(response.data.data.map((item) => ({
+          id: item.id,
+          employee_code: item.employee_code,
+          employee_name: item.employee_name,
+          code: item.employee_code,
+          name: item.employee_name,
+          designationId: Number(item.designation_id),
+          designation_id: Number(item.designation_id),
+          designation: item.designation_name || "",
+          email: item.email,
+          mobile: item.mobile,
+          status: item.status,
+        })));
+      })
+      .catch((error) => console.error("Failed to load employees", error));
+  }, [setDesignations, setEmployees]);
 
 
  

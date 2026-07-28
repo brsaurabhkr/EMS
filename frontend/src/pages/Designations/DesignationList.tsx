@@ -241,7 +241,7 @@ const Designation = () => {
               <DialogHeader>
                 <DialogTitle>{editId !== null ? "Edit Designation" : "Add Designation"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
+              <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5 py-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Designation ID</Label>
@@ -313,6 +313,7 @@ const Designation = () => {
                       </Select>
                     )}
                   />
+                  {errors.status && <p className="text-red-500 text-xs">{errors.status.message}</p>}
                 </div>
 
                 <DialogFooter className="pt-4">

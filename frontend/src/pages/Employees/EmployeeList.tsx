@@ -26,7 +26,7 @@ const employeeSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   designation_id: z.string().min(1, "Please select a designation."),
   email: z.string().email("Invalid email address."),
-  mobile: z.string().min(10, "Mobile must be at least 10 digits."),
+  mobile: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits."),
   status: z.enum(["Active", "Inactive"]),
 });
 
@@ -52,6 +52,21 @@ const Employee = () => {
 
   const showApiValidationError = (error: unknown, fallback: string) => {
     const message = getErrorMessage(error, fallback);
+    const validationErrors = (error as { response?: { data?: { errors?: Array<{ field: string; message: string }> } } })?.response?.data?.errors;
+    const fieldMap: Record<string, keyof EmployeeFormValues> = {
+      employee_code: "code",
+      employee_name: "name",
+      designation_id: "designation_id",
+      email: "email",
+      mobile: "mobile",
+      status: "status",
+      id: "id",
+    };
+
+    validationErrors?.forEach(({ field, message: fieldMessage }) => {
+      const formField = fieldMap[field];
+      if (formField) setError(formField, { type: "server", message: fieldMessage });
+    });
     const normalizedMessage = message.toLowerCase();
 
     if (normalizedMessage.includes("employee id")) {
@@ -62,6 +77,8 @@ const Employee = () => {
       setError("email", { type: "server", message });
     } else if (normalizedMessage.includes("designation")) {
       setError("designation_id", { type: "server", message });
+    } else if (normalizedMessage.includes("mobile")) {
+      setError("mobile", { type: "server", message });
     }
 
     toast.error(message);
@@ -84,7 +101,7 @@ const Employee = () => {
           name: item.employee_name,
           designationId: Number(item.designation_id),
           designation_id: Number(item.designation_id),
-          designation: item.designation || designations.find((designation) => designation.id === item.designation_id)?.name || "",
+          designation: item.designation_name || designations.find((designation) => designation.id === item.designation_id)?.name || "",
           email: item.email,
           mobile: item.mobile,
           status: item.status,
@@ -167,7 +184,7 @@ const Employee = () => {
     } else {
       apiCreateEmployee(apiPayload)
         .then((response) => {
-          const newId = response.data.data?.insertId ?? Date.now();
+          const newId = response.data.data?.id ?? employeeId;
           addEmployee({ ...uiPayload, id: newId });
           toast.success("Success", { description: "Employee added successfully." });
           setIsDialogOpen(false);
@@ -225,7 +242,7 @@ const Employee = () => {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader><DialogTitle>{editId !== null ? "Edit Employee" : "Add Employee"}</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 py-4">
                 {["id", "code", "name", "email", "mobile"].map((field) => (
                   <div key={field} className="space-y-1">
                     <Label className="capitalize">{field === "id" ? "Employee ID" : field}</Label>
@@ -265,6 +282,7 @@ const Employee = () => {
                       <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
                     </Select>
                   )} />
+                  {errors.status && <p className="text-red-500 text-xs">{errors.status.message}</p>}
                 </div>
 
                 <DialogFooter><Button type="submit">{editId !== null ? "Update" : "Save"}</Button></DialogFooter>

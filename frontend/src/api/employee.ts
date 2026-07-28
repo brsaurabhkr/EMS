@@ -14,7 +14,7 @@ export type EmployeeItem = {
   id: number;
   employee_code: string;
   employee_name: string;
-  designation: string;
+  designation_name?: string;
   designation_id: number;
   email: string;
   mobile: string;
@@ -25,7 +25,7 @@ export type CreateEmployeeResponse = {
   success: boolean;
   message: string;
   data: {
-    insertId: number;
+    id: number;
   };
 };
 

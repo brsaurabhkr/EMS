@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
 
 export type Task = {
   id: number;
@@ -21,31 +20,14 @@ type TaskStore = {
   deleteTask: (id: number) => void;
 };
 
-export const useTaskStore = create<TaskStore>()(
-  persist(
-    (set) => ({
-      tasks: [],
-      setTasks: (tasks) => set({ tasks }),
-      addTask: (task) =>
-        set((state) => ({
-          tasks: [...state.tasks, task],
-        })),
-
-      updateTask: (task) =>
-        set((state) => ({
-          tasks: state.tasks.map((item) =>
-            item.id === task.id ? task : item
-          ),
-        })),
-
-      deleteTask: (id) =>
-        set((state) => ({
-          tasks: state.tasks.filter((task) => task.id !== id),
-        })),
-    }),
-    {
-      name: "tasksData",
-      storage: createJSONStorage(() => sessionStorage),
-    }
-  )
-);
+export const useTaskStore = create<TaskStore>((set) => ({
+  tasks: [],
+  setTasks: (tasks) => set({ tasks }),
+  addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
+  updateTask: (task) => set((state) => ({
+    tasks: state.tasks.map((item) => item.id === task.id ? task : item),
+  })),
+  deleteTask: (id) => set((state) => ({
+    tasks: state.tasks.filter((task) => task.id !== id),
+  })),
+}));

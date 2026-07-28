@@ -45,13 +45,13 @@ export type DeleteDesignationResponse = {
 };
 
 export const getDesignations = () =>
-  axios.get<GetDesignationsResponse>("/api/designation");
+  axios.get<GetDesignationsResponse>("/api/designations");
 
 export const createDesignation = (designation: DesignationPayload) =>
-  axios.post<CreateDesignationResponse>("/api/designation", designation);
+  axios.post<CreateDesignationResponse>("/api/designations", designation);
 
 export const updateDesignation = (id: number, designation: DesignationPayload) =>
-  axios.put<UpdateDesignationResponse>(`/api/designation/${id}`, designation);
+  axios.put<UpdateDesignationResponse>(`/api/designations/${id}`, designation);
 
 export const deleteDesignation = (id: number) =>
-  axios.delete<DeleteDesignationResponse>(`/api/designation/${id}`);
+  axios.delete<DeleteDesignationResponse>(`/api/designations/${id}`);

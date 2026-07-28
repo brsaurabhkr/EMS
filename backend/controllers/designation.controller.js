@@ -1,115 +1,80 @@
-const Designation = require("../models/designation.model");
+const designationModel = require("../models/designation.model");
 
+const {
+    successResponse,
+    errorResponse,
+} = require("../utils/response");
+
+const { MESSAGES } = require("../utils/constants");
+
+// Get all designations
 const getDesignations = (req, res) => {
-    Designation.getAllDesignations((err, results) => {
+    designationModel.findAll((err, result) => {
         if (err) {
-            return res.status(500).json({
-                success: false,
-                message: err.message,
-            });
+            return errorResponse(res, MESSAGES.FETCH_ERROR, 500, err.message);
         }
 
-        res.json({
-            success: true,
-            data: results,
-        });
+        return successResponse(res, MESSAGES.FETCH_SUCCESS, result);
     });
 };
 
-const addDesignation = (req, res) => {
-        const designation = {
-        designation_id: req.body.designation_id,
-        designation_name: req.body.designation_name,
-        description: req.body.description,
-        status: req.body.status,
-    };
-
-    Designation.checkDesignationId(designation.designation_id, (err, idResults) => {
+// Get designation by ID
+const getDesignationById = (req, res) => {
+    designationModel.findById(req.params.id, (err, result) => {
         if (err) {
-            return res.status(500).json({ success: false, message: err.message });
+            return errorResponse(res, MESSAGES.FETCH_ERROR, 500, err.message);
         }
 
-        if (designation.designation_id && idResults.length) {
-            return res.status(400).json({ success: false, message: "Designation ID already exists" });
+        if (result.length === 0) {
+            return errorResponse(res, MESSAGES.NOT_FOUND, 404);
         }
 
-        Designation.createDesignation(designation, (err, result) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: err.message,
-                });
-            }
-
-            res.status(201).json({
-                success: true,
-                message: "Designation Added Successfully",
-                data: result,
-            });
-        });
+        return successResponse(res, MESSAGES.FETCH_SUCCESS, result[0]);
     });
 };
 
+// Create designation
+const createDesignation = (req, res) => {
+    designationModel.create(req.body, (err, result) => {
+        if (err) {
+            return errorResponse(res, MESSAGES.CREATE_ERROR, 500, err.message);
+        }
+
+        return successResponse(
+            res,
+            MESSAGES.CREATE_SUCCESS,
+            { id: req.body.designation_id },
+            201
+        );
+    });
+};
+
+// Update designation
 const updateDesignation = (req, res) => {
-    const id = req.params.id;
-    const designation = {
-        designation_name: req.body.designation_name,
-        description: req.body.description,
-        status: req.body.status,
-    };
-
-    Designation.updateDesignation(id, designation, (err, result) => {
+    designationModel.update(req.params.id, req.body, (err, result) => {
         if (err) {
-            return res.status(500).json({
-                success: false,
-                message: err.message,
-            });
+            return errorResponse(res, MESSAGES.UPDATE_ERROR, 500, err.message);
         }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Designation not found",
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Designation updated successfully",
-            data: result,
-        });
+        return successResponse(res, MESSAGES.UPDATE_SUCCESS);
     });
 };
 
+// Delete designation
 const deleteDesignation = (req, res) => {
-    const id = req.params.id;
-
-    Designation.deleteDesignation(id, (err, result) => {
+    designationModel.delete(req.params.id, (err, result) => {
         if (err) {
-            return res.status(500).json({
-                success: false,
-                message: err.message,
-            });
+            return errorResponse(res, MESSAGES.DELETE_ERROR, 500, err.message);
         }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Designation not found",
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Designation deleted successfully",
-            data: result,
-        });
+        return successResponse(res, MESSAGES.DELETE_SUCCESS);
     });
 };
 
 module.exports = {
     getDesignations,
-    addDesignation,
+    getDesignationById,
+    createDesignation,
     updateDesignation,
     deleteDesignation,
 };

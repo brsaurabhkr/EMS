@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Textarea } from "../../components/ui/textarea";
 
 const taskSchema = z.object({
-  task_id: z.string().min(1, "Task ID is required"),
+  task_id: z.string().regex(/^[1-9]\d*$/, "Task ID must be a positive whole number"),
   code: z.string().min(1, "Task code is required"),
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(5, "Description is too short"),
@@ -33,8 +33,8 @@ const taskSchema = z.object({
 type TaskFormValues = z.infer<typeof taskSchema>;
 
 const getErrorMessage = (error: unknown, fallback: string) => {
-  const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-  return message || fallback;
+  const data = (error as { response?: { data?: { message?: string; errors?: Array<{ message?: string }> } } })?.response?.data;
+  return data?.errors?.[0]?.message || data?.message || fallback;
 };
 
 const getAssignedEmployeeLabel = (employees: any[], employeeId: number) => {
@@ -63,13 +63,13 @@ const Task = ({ employees }: any) => {
       .then((response) => {
         const items = response.data.data.map((task) => ({
           id: task.id,
-          task_id: task.task_id ?? String(task.id),
+          task_id: String(task.task_id ?? task.id),
           code: task.task_code,
           title: task.title,
           description: task.description,
           employee_id: Number(task.employee_id),
           priority: task.priority,
-          dueDate: task.due_date,
+          dueDate: String(task.due_date).slice(0, 10),
           status: task.status,
         }));
         setTasks(items);
@@ -127,7 +127,7 @@ const Task = ({ employees }: any) => {
     if (editId !== null) {
       apiUpdateTask(editId, payload)
         .then(() => {
-          updateTask({ id: editId, task_id: values.task_id, code: values.code, title: values.title, description: values.description, employee_id: Number(values.employee_id), priority: values.priority, dueDate: values.dueDate, status: values.status });
+          updateTask({ id: Number(values.task_id), task_id: values.task_id, code: values.code, title: values.title, description: values.description, employee_id: Number(values.employee_id), priority: values.priority, dueDate: values.dueDate, status: values.status });
           toast.success("Task updated!");
           setShowForm(false);
           reset();
@@ -135,6 +135,7 @@ const Task = ({ employees }: any) => {
         })
         .catch((error) => {
           console.error("Failed to update task", error);
+          applyServerValidationErrors(error);
           toast.error(getErrorMessage(error, "Unable to update task"));
         });
       return;
@@ -142,7 +143,7 @@ const Task = ({ employees }: any) => {
 
     createTask(payload)
       .then((response) => {
-        const newId = response.data.data.insertId ?? Date.now();
+        const newId = response.data.data.id ?? Number(values.task_id);
         addTask({ id: newId, ...values, employee_id: Number(values.employee_id) });
         toast.success("Task created!");
         setShowForm(false);
@@ -150,8 +151,28 @@ const Task = ({ employees }: any) => {
       })
       .catch((error) => {
         console.error("Failed to create task", error);
-          toast.error(getErrorMessage(error, "Unable to create task"));
+        applyServerValidationErrors(error);
+        toast.error(getErrorMessage(error, "Unable to create task"));
       });
+  };
+
+  const applyServerValidationErrors = (error: unknown) => {
+    const validationErrors = (error as { response?: { data?: { errors?: Array<{ field: string; message: string }> } } })?.response?.data?.errors;
+    const fieldMap: Record<string, keyof TaskFormValues> = {
+      task_id: "task_id",
+      task_code: "code",
+      title: "title",
+      description: "description",
+      employee_id: "employee_id",
+      priority: "priority",
+      due_date: "dueDate",
+      status: "status",
+    };
+
+    validationErrors?.forEach(({ field, message }) => {
+      const formField = fieldMap[field];
+      if (formField) form.setError(formField, { type: "server", message });
+    });
   };
 
   const onInvalid = () => {
@@ -240,7 +261,7 @@ const Task = ({ employees }: any) => {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? "Edit" : "Create"} Task</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4 py-4">
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate className="space-y-4 py-4">
             
             <div className="space-y-1">
               <Label>Task ID</Label>
@@ -295,6 +316,7 @@ const Task = ({ employees }: any) => {
                     <SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="High">High</SelectItem></SelectContent>
                   </Select>
                 )} />
+                {errors.priority && <p className="text-xs text-red-500">{errors.priority.message}</p>}
               </div>
             </div>
 
@@ -311,6 +333,7 @@ const Task = ({ employees }: any) => {
                   </SelectContent>
                 </Select>
               )} />
+              {errors.status && <p className="text-xs text-red-500">{errors.status.message}</p>}
             </div>
 
             <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Task"}</Button></DialogFooter>

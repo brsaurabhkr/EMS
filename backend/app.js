@@ -1,20 +1,17 @@
-const express = require("express")
-const cors = require("cors")
-require("./config/db.config")
+const express = require("express");
+const cors = require("cors");
+require("./config/db.config");
+
+const routes = require("./routes");
+const errorHandler = require("./middlewares/error.middleware");
 
 const app = express();
 
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
-const designationRoutes = require("./routes/designation.routes")
-app.use("/api/designation",designationRoutes)
+app.use("/api", routes);
 
-const employeeRoutes = require("./routes/employee.routes")
-app.use("/api/employees",employeeRoutes)
+app.use(errorHandler);
 
-const taskRoutes = require("./routes/task.routes")
-app.use("/api/tasks",taskRoutes)
-
-
-module.exports = app; 
+module.exports = app;
