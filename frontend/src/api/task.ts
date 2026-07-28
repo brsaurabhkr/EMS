@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./client";
 
 export type TaskPayload = {
   task_id: string;
@@ -45,13 +45,13 @@ export type DeleteTaskResponse = {
 };
 
 export const getTasks = () =>
-  axios.get<GetTasksResponse>("/api/tasks");
+  api.get<GetTasksResponse>("/api/tasks");
 
 export const createTask = (task: TaskPayload) =>
-  axios.post<CreateTaskResponse>("/api/tasks", task);
+  api.post<CreateTaskResponse>("/api/tasks", task);
 
 export const updateTask = (id: number, task: TaskPayload) =>
-  axios.put<UpdateTaskResponse>(`/api/tasks/${id}`, task);
+  api.put<UpdateTaskResponse>(`/api/tasks/${id}`, task);
 
 export const deleteTask = (id: number) =>
-  axios.delete<DeleteTaskResponse>(`/api/tasks/${id}`);
+  api.delete<DeleteTaskResponse>(`/api/tasks/${id}`);

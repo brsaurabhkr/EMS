@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./client";
 
 export type DesignationPayload = {
   designation_id?: number;
@@ -45,13 +45,13 @@ export type DeleteDesignationResponse = {
 };
 
 export const getDesignations = () =>
-  axios.get<GetDesignationsResponse>("/api/designations");
+  api.get<GetDesignationsResponse>("/api/designations");
 
 export const createDesignation = (designation: DesignationPayload) =>
-  axios.post<CreateDesignationResponse>("/api/designations", designation);
+  api.post<CreateDesignationResponse>("/api/designations", designation);
 
 export const updateDesignation = (id: number, designation: DesignationPayload) =>
-  axios.put<UpdateDesignationResponse>(`/api/designations/${id}`, designation);
+  api.put<UpdateDesignationResponse>(`/api/designations/${id}`, designation);
 
 export const deleteDesignation = (id: number) =>
-  axios.delete<DeleteDesignationResponse>(`/api/designations/${id}`);
+  api.delete<DeleteDesignationResponse>(`/api/designations/${id}`);

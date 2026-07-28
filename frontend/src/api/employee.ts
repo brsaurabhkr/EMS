@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./client";
 
 export type EmployeePayload = {
   id: number;
@@ -50,13 +50,13 @@ export type DeleteEmployeeResponse = {
   };
 };
 
-export const getEmployees = () => axios.get<GetEmployeesResponse>("/api/employees");
+export const getEmployees = () => api.get<GetEmployeesResponse>("/api/employees");
 
 export const createEmployee = (employee: EmployeePayload) =>
-  axios.post<CreateEmployeeResponse>("/api/employees", employee);
+  api.post<CreateEmployeeResponse>("/api/employees", employee);
 
 export const updateEmployee = (id: number, employee: EmployeePayload) =>
-  axios.put<UpdateEmployeeResponse>(`/api/employees/${id}`, employee);
+  api.put<UpdateEmployeeResponse>(`/api/employees/${id}`, employee);
 
 export const deleteEmployee = (id: number) =>
-  axios.delete<DeleteEmployeeResponse>(`/api/employees/${id}`);
+  api.delete<DeleteEmployeeResponse>(`/api/employees/${id}`);
