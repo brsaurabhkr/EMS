@@ -17,8 +17,8 @@ import Tasks from "./pages/Tasks/TaskList";
 import { Toaster } from "./components/ui/sonner";
 import { useEmployeeStore } from "./store/employeeStore";
 import { useDesignationStore } from "./store/designationStore";
-import { getEmployees } from "./api/employee";
-import { getDesignations } from "./api/designation";
+import { getEmployees, type EmployeeItem, type GetEmployeesResponse } from "./api/employee";
+import { getDesignations, type DesignationItem, type GetDesignationsResponse } from "./api/designation";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,8 +32,8 @@ function App() {
 
   useEffect(() => {
     getDesignations()
-      .then((response) => {
-        setDesignations(response.data.data.map((item) => ({
+      .then((response: { data: GetDesignationsResponse }) => {
+        setDesignations(response.data.data.map((item: DesignationItem) => ({
           id: item.id,
           name: item.designation_name,
           description: item.description,
@@ -43,8 +43,8 @@ function App() {
       .catch((error) => console.error("Failed to load designations", error));
 
     getEmployees()
-      .then((response) => {
-        setEmployees(response.data.data.map((item) => ({
+      .then((response: { data: GetEmployeesResponse }) => {
+        setEmployees(response.data.data.map((item: EmployeeItem) => ({
           id: item.id,
           employee_code: item.employee_code,
           employee_name: item.employee_name,
