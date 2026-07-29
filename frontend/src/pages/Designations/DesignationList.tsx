@@ -44,7 +44,6 @@ import { Textarea } from "../../components/ui/textarea";
 
 // 1. Zod Schema
 const designationSchema = z.object({
-  designationId: z.string().min(1, "Designation ID is required").regex(/^[0-9]+$/, "Designation ID must be numeric"),
   name: z.string().min(1, "Please select a designation."),
   description: z.string().min(5, "Description must be at least 5 characters."),
   status: z.enum(["Active", "Inactive"]),
@@ -64,12 +63,12 @@ const designationOptions = [
 const Designation = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [editId, setEditId] = useState<number | null>(null);
-  const [designationToDelete, setDesignationToDelete] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [designationToDelete, setDesignationToDelete] = useState<string | null>(null);
   const { designations, setDesignations } = useDesignationStore();
 
   useEffect(() => {
-    getDesignations()
+    getDesignations({ search })
       .then((response) => {
         const items = response.data.data.map((item) => ({
           id: item.id,
@@ -82,7 +81,7 @@ const Designation = () => {
       .catch((error) => {
         console.error("Failed to load designations", error);
       });
-  }, []);
+  }, [search, setDesignations]);
 
   // 2. React Hook Form
   const {
@@ -95,7 +94,6 @@ const Designation = () => {
   } = useForm<DesignationFormValues>({
     resolver: zodResolver(designationSchema),
     defaultValues: {
-      designationId: "",
       name: "",
       description: "",
       status: "Active",
@@ -103,7 +101,7 @@ const Designation = () => {
   });
 
   const handleOpenAddModal = () => {
-    reset({ designationId: "", name: "", description: "", status: "Active" });
+    reset({ name: "", description: "", status: "Active" });
     setEditId(null);
     setIsDialogOpen(true);
   };
@@ -111,7 +109,6 @@ const Designation = () => {
   const handleEdit = (item: any) => {
     setEditId(item.id);
     reset({
-      designationId: String(item.id),
       name: item.name,
       description: item.description,
       status: item.status as "Active" | "Inactive",
@@ -119,7 +116,7 @@ const Designation = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteDesignation(id)
       .then(() => {
         setDesignations(designations.filter((item) => item.id !== id));
@@ -135,19 +132,8 @@ const Designation = () => {
   };
 
   const onSubmit = (data: DesignationFormValues) => {
-    // Check for duplicate designation ID only
-    const existsId = designations.some(
-      (item) => String(item.id) === data.designationId && item.id !== editId
-    );
-
-    if (existsId) {
-      setError("designationId", { type: "manual", message: "This designation ID is already used." });
-      return;
-    }
-
     if (editId !== null) {
       updateDesignation(editId, {
-        designation_id: Number(data.designationId),
         designation_name: data.name,
         description: data.description,
         status: data.status,
@@ -170,13 +156,12 @@ const Designation = () => {
     }
 
     createDesignation({
-      designation_id: Number(data.designationId),
       designation_name: data.name,
       description: data.description,
       status: data.status,
     })
       .then((response) => {
-        const newId = Number(data.designationId) || response.data.data.insertId || designations.length + 1;
+        const newId = response.data.data.id;
         setDesignations([...designations, { id: newId, ...data }]);
         setIsDialogOpen(false);
       })
@@ -186,14 +171,7 @@ const Designation = () => {
           error?.response?.data?.message ||
           "Unable to save designation. Try again.";
 
-        if (message.includes("Designation ID")) {
-          setError("designationId", { type: "manual", message });
-        } else {
-          setError("name", {
-            type: "manual",
-            message,
-          });
-        }
+        setError("name", { type: "manual", message });
       });
   };
 
@@ -241,23 +219,9 @@ const Designation = () => {
               <DialogHeader>
                 <DialogTitle>{editId !== null ? "Edit Designation" : "Add Designation"}</DialogTitle>
               </DialogHeader>
+              
               <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5 py-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Designation ID</Label>
-                    <Input
-                      type="text"
-                      {...register("designationId")}
-                      placeholder="Enter unique ID"
-                      className={errors.designationId ? "border-red-500" : ""}
-                      disabled={editId !== null}
-                    />
-                    {errors.designationId && (
-                      <p className="text-red-500 text-xs">{errors.designationId.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <Label>Designation Name</Label>
                     <Controller
                       name="name"
@@ -278,7 +242,6 @@ const Designation = () => {
                       )}
                     />
                     {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
-                  </div>
                 </div>
 
                 {/* Description - Textarea */}

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export type Designation = {
-  id: number;
+  id: string;
   name: string;
   description: string;
   status: "Active" | "Inactive";

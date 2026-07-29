@@ -1,12 +1,11 @@
 import { create } from "zustand";
 
 export type Task = {
-  id: number;
-  task_id: string;
+  id: string;
   code: string;
   title: string;
   description: string;
-  employee_id: number;
+  employee_id: string;
   priority: "Low" | "Medium" | "High";
   dueDate: string;
   status: "Pending" | "In Progress" | "Completed";
@@ -17,7 +16,7 @@ type TaskStore = {
   setTasks: (tasks: Task[]) => void;
   addTask: (task: Task) => void;
   updateTask: (task: Task) => void;
-  deleteTask: (id: number) => void;
+  deleteTask: (id: string) => void;
 };
 
 export const useTaskStore = create<TaskStore>((set) => ({

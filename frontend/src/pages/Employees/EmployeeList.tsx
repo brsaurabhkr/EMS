@@ -21,7 +21,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 
 // 1. Zod Schema
 const employeeSchema = z.object({
-  id: z.string().regex(/^[1-9]\d*$/, "Employee ID must be a positive whole number."),
   code: z.string().min(1, "Code is required."),
   name: z.string().min(2, "Name must be at least 2 characters."),
   designation_id: z.string().min(1, "Please select a designation."),
@@ -41,13 +40,13 @@ const Employee = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { designations } = useDesignationStore();
   const [search, setSearch] = useState("");
-  const [editId, setEditId] = useState<number | null>(null);
-  const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
   const { employees, addEmployee, updateEmployee, deleteEmployee, setEmployees } = useEmployeeStore();
 
   const { register, handleSubmit, reset, control, setError, formState: { errors } } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
-    defaultValues: { id: "", code: "", name: "", designation_id: "", email: "", mobile: "", status: "Active" },
+    defaultValues: { code: "", name: "", designation_id: "", email: "", mobile: "", status: "Active" },
   });
 
   const showApiValidationError = (error: unknown, fallback: string) => {
@@ -60,7 +59,6 @@ const Employee = () => {
       email: "email",
       mobile: "mobile",
       status: "status",
-      id: "id",
     };
 
     validationErrors?.forEach(({ field, message: fieldMessage }) => {
@@ -69,9 +67,7 @@ const Employee = () => {
     });
     const normalizedMessage = message.toLowerCase();
 
-    if (normalizedMessage.includes("employee id")) {
-      setError("id", { type: "server", message });
-    } else if (normalizedMessage.includes("employee code")) {
+    if (normalizedMessage.includes("employee code")) {
       setError("code", { type: "server", message });
     } else if (normalizedMessage.includes("email")) {
       setError("email", { type: "server", message });
@@ -85,13 +81,13 @@ const Employee = () => {
   };
 
   const handleOpenAddModal = () => {
-    reset({ id: "", code: "", name: "", designation_id: "", email: "", mobile: "", status: "Active" });
+    reset({ code: "", name: "", designation_id: "", email: "", mobile: "", status: "Active" });
     setEditId(null);
     setIsDialogOpen(true);
   };
 
   useEffect(() => {
-    apiGetEmployees()
+    apiGetEmployees({ search })
       .then((response) => {
         const items = response.data.data.map((item: any) => ({
           id: item.id,
@@ -99,8 +95,8 @@ const Employee = () => {
           employee_name: item.employee_name,
           code: item.employee_code,
           name: item.employee_name,
-          designationId: Number(item.designation_id),
-          designation_id: Number(item.designation_id),
+          designationId: String(item.designation_id),
+          designation_id: String(item.designation_id),
           designation: item.designation_name || designations.find((designation) => designation.id === item.designation_id)?.name || "",
           email: item.email,
           mobile: item.mobile,
@@ -112,11 +108,11 @@ const Employee = () => {
         console.error("Failed to load employees", error);
         toast.error("Unable to load employees");
       });
-  }, [designations, setEmployees]);
+  }, [designations, search, setEmployees]);
 
   const handleEdit = (item: any) => {
     setEditId(item.id);
-    reset({ ...item, id: String(item.id), designation_id: String(item.designationId) });
+    reset({ ...item, designation_id: String(item.designationId) });
     setIsDialogOpen(true);
   };
 
@@ -125,14 +121,6 @@ const Employee = () => {
     if (codeExists) {
       setError("code", { type: "manual", message: "This employee code already exists!" });
       toast.error("Error", { description: "Code already exists!" });
-      return;
-    }
-
-    const employeeId = Number(data.id);
-    const idExists = employees.some((item: any) => item.id === employeeId && item.id !== editId);
-    if (idExists) {
-      setError("id", { type: "manual", message: "This employee ID already exists!" });
-      toast.error("Employee ID already exists!");
       return;
     }
 
@@ -147,13 +135,12 @@ const Employee = () => {
 
     const selectedDesignation = designations.find((designation) => String(designation.id) === data.designation_id);
     const uiPayload = {
-      id: employeeId,
       employee_code: data.code,
       employee_name: data.name,
       code: data.code,
       name: data.name,
-      designationId: Number(data.designation_id),
-      designation_id: Number(data.designation_id),
+      designationId: data.designation_id,
+      designation_id: data.designation_id,
       designation: selectedDesignation ? selectedDesignation.name : "",
       email: data.email,
       mobile: data.mobile,
@@ -161,10 +148,9 @@ const Employee = () => {
     };
 
     const apiPayload = {
-      id: employeeId,
       employee_code: data.code,
       employee_name: data.name,
-      designation_id: Number(data.designation_id),
+      designation_id: data.designation_id,
       email: data.email,
       mobile: data.mobile,
       status: data.status,
@@ -184,7 +170,7 @@ const Employee = () => {
     } else {
       apiCreateEmployee(apiPayload)
         .then((response) => {
-          const newId = response.data.data?.id ?? employeeId;
+          const newId = response.data.data.id;
           addEmployee({ ...uiPayload, id: newId });
           toast.success("Success", { description: "Employee added successfully." });
           setIsDialogOpen(false);
@@ -243,13 +229,11 @@ const Employee = () => {
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader><DialogTitle>{editId !== null ? "Edit Employee" : "Add Employee"}</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 py-4">
-                {["id", "code", "name", "email", "mobile"].map((field) => (
+                {["code", "name", "email", "mobile"].map((field) => (
                   <div key={field} className="space-y-1">
-                    <Label className="capitalize">{field === "id" ? "Employee ID" : field}</Label>
+                    <Label className="capitalize">{field}</Label>
                     <Input
-                      type={field === "id" ? "number" : "text"}
-                      min={field === "id" ? 1 : undefined}
-                      disabled={field === "id" && editId !== null}
+                      type="text"
                       {...register(field as any)}
                       className={errors[field as keyof EmployeeFormValues] ? "border-red-500" : ""}
                     />

@@ -1,13 +1,13 @@
 import { create } from "zustand";
 
 export type Employee = {
-  id: number;
+  id: string;
   employee_code: string;
   employee_name: string;
   code: string;
   name: string;
-  designationId: number;
-  designation_id: number;
+  designationId: string;
+  designation_id: string;
   designation: string;
   email: string;
   mobile: string;
@@ -19,7 +19,7 @@ type EmployeeStore = {
   setEmployees: (employees: Employee[]) => void;
   addEmployee: (employee: Employee) => void;
   updateEmployee: (employee: Employee) => void;
-  deleteEmployee: (id: number) => void;
+  deleteEmployee: (id: string) => void;
 };
 
 export const useEmployeeStore = create<EmployeeStore>((set) => ({

@@ -1,14 +1,13 @@
 import api from "./client";
 
 export type DesignationPayload = {
-  designation_id?: number;
   designation_name: string;
   description: string;
   status: "Active" | "Inactive";
 };
 
 export type DesignationItem = {
-  id: number;
+  id: string;
   designation_name: string;
   description: string;
   status: "Active" | "Inactive";
@@ -18,14 +17,18 @@ export type CreateDesignationResponse = {
   success: boolean;
   message: string;
   data: {
-    insertId: number;
-    affectedRows?: number;
+    id: string;
   };
 };
 
 export type GetDesignationsResponse = {
   success: boolean;
   data: DesignationItem[];
+};
+
+export type DesignationFilters = {
+  search?: string;
+  status?: "Active" | "Inactive";
 };
 
 export type UpdateDesignationResponse = {
@@ -44,14 +47,14 @@ export type DeleteDesignationResponse = {
   };
 };
 
-export const getDesignations = () =>
-  api.get<GetDesignationsResponse>("/api/designations");
+export const getDesignations = (params?: DesignationFilters) =>
+  api.get<GetDesignationsResponse>("/api/designations", { params });
 
 export const createDesignation = (designation: DesignationPayload) =>
   api.post<CreateDesignationResponse>("/api/designations", designation);
 
-export const updateDesignation = (id: number, designation: DesignationPayload) =>
+export const updateDesignation = (id: string, designation: DesignationPayload) =>
   api.put<UpdateDesignationResponse>(`/api/designations/${id}`, designation);
 
-export const deleteDesignation = (id: number) =>
+export const deleteDesignation = (id: string) =>
   api.delete<DeleteDesignationResponse>(`/api/designations/${id}`);

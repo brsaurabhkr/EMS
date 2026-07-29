@@ -1,4 +1,5 @@
 const employeeModel = require("../models/employee.model");
+const { randomUUID } = require("crypto");
 
 const {
     successResponse,
@@ -25,7 +26,7 @@ const handleDuplicateEmployeeError = (res, err) => {
 
 // Get all employees
 const getEmployees = (req, res) => {
-    employeeModel.findAll((err, result) => {
+    employeeModel.findAll(req.query, (err, result) => {
         if (err) {
             return errorResponse(res, MESSAGES.FETCH_ERROR, 500, err.message);
         }
@@ -51,7 +52,9 @@ const getEmployeeById = (req, res) => {
 
 // Create employee
 const createEmployee = (req, res) => {
-    employeeModel.create(req.body, (err, result) => {
+    const employee = { ...req.body, id: randomUUID() };
+
+    employeeModel.create(employee, (err, result) => {
         if (err) {
             if (handleDuplicateEmployeeError(res, err)) return;
             return errorResponse(res, MESSAGES.CREATE_ERROR, 500, err.message);
@@ -60,7 +63,7 @@ const createEmployee = (req, res) => {
         return successResponse(
             res,
             MESSAGES.CREATE_SUCCESS,
-            { id: req.body.id },
+            { id: employee.id },
             201
         );
     });

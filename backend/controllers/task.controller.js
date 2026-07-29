@@ -1,4 +1,5 @@
 const taskModel = require("../models/task.model");
+const { randomUUID } = require("crypto");
 
 const {
     successResponse,
@@ -9,7 +10,7 @@ const { MESSAGES } = require("../utils/constants");
 
 // Get all tasks
 const getTasks = (req, res) => {
-    taskModel.findAll((err, result) => {
+    taskModel.findAll(req.query, (err, result) => {
         if (err) {
             return errorResponse(res, MESSAGES.FETCH_ERROR, 500, err.message);
         }
@@ -35,15 +36,21 @@ const getTaskById = (req, res) => {
 
 // Create task
 const createTask = (req, res) => {
-    taskModel.create(req.body, (err, result) => {
+    const task = { ...req.body, id: randomUUID() };
+
+    taskModel.create(task, (err, result) => {
         if (err) {
             return errorResponse(res, MESSAGES.CREATE_ERROR, 500, err.message);
+        }
+
+        if (result.affectedRows === 0) {
+            return errorResponse(res, "Selected employee was not found.", 400);
         }
 
         return successResponse(
             res,
             MESSAGES.CREATE_SUCCESS,
-            { id: req.body.task_id },
+            { id: task.id },
             201
         );
     });
@@ -66,7 +73,7 @@ const updateTask = (req, res) => {
 
 // Update task status
 const updateTaskStatus = (req, res) => {
-    taskModel.update(req.params.id, req.body, (err, result) => {
+    taskModel.updateStatus(req.params.id, req.body.status, (err, result) => {
         if (err) {
             return errorResponse(res, MESSAGES.UPDATE_ERROR, 500, err.message);
         }

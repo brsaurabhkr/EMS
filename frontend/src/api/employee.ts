@@ -1,21 +1,20 @@
 import api from "./client";
 
 export type EmployeePayload = {
-  id: number;
   employee_code: string;
   employee_name: string;
-  designation_id: number;
+  designation_id: string;
   email: string;
   mobile: string;
   status: "Active" | "Inactive";
 };
 
 export type EmployeeItem = {
-  id: number;
+  id: string;
   employee_code: string;
   employee_name: string;
   designation_name?: string;
-  designation_id: number;
+  designation_id: string;
   email: string;
   mobile: string;
   status: "Active" | "Inactive";
@@ -25,13 +24,19 @@ export type CreateEmployeeResponse = {
   success: boolean;
   message: string;
   data: {
-    id: number;
+    id: string;
   };
 };
 
 export type GetEmployeesResponse = {
   success: boolean;
   data: EmployeeItem[];
+};
+
+export type EmployeeFilters = {
+  search?: string;
+  status?: "Active" | "Inactive";
+  designation_id?: string;
 };
 
 export type UpdateEmployeeResponse = {
@@ -50,13 +55,13 @@ export type DeleteEmployeeResponse = {
   };
 };
 
-export const getEmployees = () => api.get<GetEmployeesResponse>("/api/employees");
+export const getEmployees = (params?: EmployeeFilters) => api.get<GetEmployeesResponse>("/api/employees", { params });
 
 export const createEmployee = (employee: EmployeePayload) =>
   api.post<CreateEmployeeResponse>("/api/employees", employee);
 
-export const updateEmployee = (id: number, employee: EmployeePayload) =>
+export const updateEmployee = (id: string, employee: EmployeePayload) =>
   api.put<UpdateEmployeeResponse>(`/api/employees/${id}`, employee);
 
-export const deleteEmployee = (id: number) =>
+export const deleteEmployee = (id: string) =>
   api.delete<DeleteEmployeeResponse>(`/api/employees/${id}`);

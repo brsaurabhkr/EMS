@@ -1,4 +1,5 @@
 const designationModel = require("../models/designation.model");
+const { randomUUID } = require("crypto");
 
 const {
     successResponse,
@@ -9,7 +10,7 @@ const { MESSAGES } = require("../utils/constants");
 
 // Get all designations
 const getDesignations = (req, res) => {
-    designationModel.findAll((err, result) => {
+    designationModel.findAll(req.query, (err, result) => {
         if (err) {
             return errorResponse(res, MESSAGES.FETCH_ERROR, 500, err.message);
         }
@@ -35,7 +36,9 @@ const getDesignationById = (req, res) => {
 
 // Create designation
 const createDesignation = (req, res) => {
-    designationModel.create(req.body, (err, result) => {
+    const designation = { ...req.body, id: randomUUID() };
+
+    designationModel.create(designation, (err, result) => {
         if (err) {
             return errorResponse(res, MESSAGES.CREATE_ERROR, 500, err.message);
         }
@@ -43,7 +46,7 @@ const createDesignation = (req, res) => {
         return successResponse(
             res,
             MESSAGES.CREATE_SUCCESS,
-            { id: req.body.designation_id },
+            { id: designation.id },
             201
         );
     });

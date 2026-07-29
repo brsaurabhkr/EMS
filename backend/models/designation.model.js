@@ -1,12 +1,26 @@
 const db = require("../config/db.config");
 
-const findAll = (callback) => {
-    db.query("SELECT designation_id AS id, designation_name, description, status FROM designations", callback);
+const findAll = (filters, callback) => {
+    const where = [];
+    const values = [];
+    const search = String(filters.search || "").trim();
+
+    if (search) {
+        where.push("(designation_name LIKE ? OR description LIKE ?)");
+        values.push(`%${search}%`, `%${search}%`);
+    }
+    if (filters.status) {
+        where.push("status=?");
+        values.push(filters.status);
+    }
+
+    const sql = `SELECT id, designation_name, description, status FROM designations${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY designation_name`;
+    db.query(sql, values, callback);
 };
 
 const findById = (id, callback) => {
     db.query(
-        "SELECT designation_id AS id, designation_name, description, status FROM designations WHERE designation_id = ?",
+        "SELECT id, designation_name, description, status FROM designations WHERE id = ?",
         [id],
         callback
     );
@@ -15,13 +29,13 @@ const findById = (id, callback) => {
 const create = (data, callback) => {
     const sql = `
         INSERT INTO designations
-        (designation_id, designation_name, description, status)
+        (id, designation_name, description, status)
         VALUES (?, ?, ?, ?)
     `;
 
     db.query(
         sql,
-        [data.designation_id, data.designation_name, data.description, data.status],
+        [data.id, data.designation_name, data.description, data.status],
         callback
     );
 };
@@ -30,7 +44,7 @@ const update = (id, data, callback) => {
     const sql = `
         UPDATE designations
         SET designation_name=?, description=?, status=?
-        WHERE designation_id=?
+        WHERE id=?
     `;
 
     db.query(
@@ -47,7 +61,7 @@ const update = (id, data, callback) => {
 
 const remove = (id, callback) => {
     db.query(
-        "DELETE FROM designations WHERE designation_id=?",
+        "DELETE FROM designations WHERE id=?",
         [id],
         callback
     );

@@ -20,24 +20,54 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Textarea } from "../../components/ui/textarea";
 
 const taskSchema = z.object({
-  task_id: z.string().regex(/^[1-9]\d*$/, "Task ID must be a positive whole number"),
   code: z.string().min(1, "Task code is required"),
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(5, "Description is too short"),
   employee_id: z.string().min(1, "Please assign an employee"),
   priority: z.enum(["Low", "Medium", "High"]),
-  dueDate: z.string().min(1, "Due date is required"),
+  dueDate: z
+    .string()
+    .min(1, "Due date is required")
+    .refine((value) => {
+      const { minimum, maximum } = getDueDateRange();
+      return value >= minimum && value <= maximum;
+    }, "Due date must be between today and the next 30 days"),
   status: z.enum(["Pending", "In Progress", "Completed"]),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDueDateRange() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maximumDate = new Date(today);
+  maximumDate.setDate(maximumDate.getDate() + 30);
+  return { minimum: formatLocalDate(today), maximum: formatLocalDate(maximumDate) };
+}
+
+const defaultTaskFormValues: TaskFormValues = {
+  code: "",
+  title: "",
+  description: "",
+  employee_id: "",
+  priority: "Medium",
+  dueDate: getDueDateRange().minimum,
+  status: "Pending",
+};
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   const data = (error as { response?: { data?: { message?: string; errors?: Array<{ message?: string }> } } })?.response?.data;
   return data?.errors?.[0]?.message || data?.message || fallback;
 };
 
-const getAssignedEmployeeLabel = (employees: any[], employeeId: number) => {
+const getAssignedEmployeeLabel = (employees: any[], employeeId: string) => {
   const employee = employees.find((e: any) => e.id === employeeId);
   if (!employee) return "Unassigned";
   return `${employee.name} (Designation ID: ${employee.designationId})`;
@@ -45,31 +75,53 @@ const getAssignedEmployeeLabel = (employees: any[], employeeId: number) => {
 
 const Task = ({ employees }: any) => {
   const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const { tasks, setTasks, addTask, updateTask, deleteTask } = useTaskStore();
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
-    defaultValues: { task_id: "", code: "", title: "", description: "", employee_id: "", priority: "Medium", dueDate: "", status: "Pending" }
+    defaultValues: defaultTaskFormValues,
   });
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = form;
 
+  const openCreateForm = () => {
+    setEditId(null);
+    reset(defaultTaskFormValues);
+    setShowForm(true);
+  };
+
+  const openEditForm = (task: any) => {
+    setEditId(task.id);
+    reset({ ...task, employee_id: String(task.employee_id) }, { keepDefaultValues: true });
+    setShowForm(true);
+  };
+
+  const handleFormOpenChange = (open: boolean) => {
+    setShowForm(open);
+    if (!open) {
+      setEditId(null);
+      reset(defaultTaskFormValues);
+    }
+  };
+
   useEffect(() => {
-    apiGetTasks()
+    apiGetTasks({
+      search,
+      status: filterStatus === "All" ? undefined : filterStatus as TaskFormValues["status"],
+    })
       .then((response) => {
         const items = response.data.data.map((task) => ({
-          id: task.id,
-          task_id: String(task.task_id ?? task.id),
+          id: String(task.id),
           code: task.task_code,
           title: task.title,
           description: task.description,
-          employee_id: Number(task.employee_id),
+          employee_id: String(task.employee_id),
           priority: task.priority,
-          dueDate: String(task.due_date).slice(0, 10),
+          dueDate: task.due_date,
           status: task.status,
         }));
         setTasks(items);
@@ -77,16 +129,9 @@ const Task = ({ employees }: any) => {
       .catch((error) => {
         console.error("Failed to load tasks", error);
       });
-  }, []);
+  }, [search, filterStatus, setTasks]);
 
   const onSubmit = (values: TaskFormValues) => {
-    const idExists = tasks.some((task: any) => task.task_id.toLowerCase() === values.task_id.toLowerCase() && task.id !== editId);
-    if (idExists) {
-      form.setError("task_id", { type: "manual", message: "Task ID already exists." });
-      toast.error("Task ID already exists.");
-      return;
-    }
-
     const codeExists = tasks.some((task: any) => task.code.toLowerCase() === values.code.toLowerCase() && task.id !== editId);
     if (codeExists) {
       form.setError("code", { type: "manual", message: "Task Code already exists." });
@@ -102,35 +147,23 @@ const Task = ({ employees }: any) => {
       return;
     }
 
-    // normalize due date to YYYY-MM-DD
-    let normalizedDueDate = values.dueDate;
-    try {
-      const parsed = new Date(values.dueDate);
-      if (!isNaN(parsed.getTime())) {
-        normalizedDueDate = parsed.toISOString().slice(0, 10);
-      }
-    } catch (e) {
-      // keep original, server will validate
-    }
-
     const payload = {
-      task_id: values.task_id,
       task_code: values.code,
       title: values.title,
       description: values.description,
-      employee_id: Number(values.employee_id),
+      employee_id: values.employee_id,
       priority: values.priority,
-      due_date: normalizedDueDate,
+      due_date: values.dueDate,
       status: values.status,
     };
 
     if (editId !== null) {
       apiUpdateTask(editId, payload)
         .then(() => {
-          updateTask({ id: Number(values.task_id), task_id: values.task_id, code: values.code, title: values.title, description: values.description, employee_id: Number(values.employee_id), priority: values.priority, dueDate: values.dueDate, status: values.status });
+          updateTask({ id: editId, code: values.code, title: values.title, description: values.description, employee_id: values.employee_id, priority: values.priority, dueDate: values.dueDate, status: values.status });
           toast.success("Task updated!");
           setShowForm(false);
-          reset();
+          reset(defaultTaskFormValues);
           setEditId(null);
         })
         .catch((error) => {
@@ -143,11 +176,11 @@ const Task = ({ employees }: any) => {
 
     createTask(payload)
       .then((response) => {
-        const newId = response.data.data.id ?? Number(values.task_id);
-        addTask({ id: newId, ...values, employee_id: Number(values.employee_id) });
+        const newId = response.data.data.id;
+        addTask({ id: newId, ...values, employee_id: values.employee_id });
         toast.success("Task created!");
         setShowForm(false);
-        reset();
+        reset(defaultTaskFormValues);
       })
       .catch((error) => {
         console.error("Failed to create task", error);
@@ -159,7 +192,6 @@ const Task = ({ employees }: any) => {
   const applyServerValidationErrors = (error: unknown) => {
     const validationErrors = (error as { response?: { data?: { errors?: Array<{ field: string; message: string }> } } })?.response?.data?.errors;
     const fieldMap: Record<string, keyof TaskFormValues> = {
-      task_id: "task_id",
       task_code: "code",
       title: "title",
       description: "description",
@@ -211,7 +243,7 @@ const Task = ({ employees }: any) => {
                 <SelectItem value="Completed">Completed</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={() => { reset(); setEditId(null); setShowForm(true); }} className="h-9 w-full sm:ml-auto sm:w-auto">
+            <Button onClick={openCreateForm} className="h-9 w-full sm:ml-auto sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> Create Task
             </Button>
           </div>
@@ -222,7 +254,7 @@ const Task = ({ employees }: any) => {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-semibold truncate">{t.title}</p><p className="text-sm text-muted-foreground">{t.code}</p></div><Badge className="shrink-0">{t.status}</Badge></div>
                   <div className="grid grid-cols-2 gap-3 text-sm"><div><p className="text-muted-foreground">Assigned to</p><p className="truncate">{getAssignedEmployeeLabel(employees, t.employee_id)}</p></div><div><p className="text-muted-foreground">Due date</p><p>{t.dueDate}</p></div><div><p className="text-muted-foreground">Priority</p><p>{t.priority}</p></div></div>
-                  <div className="flex gap-2"><Button className="flex-1" variant="outline" size="sm" onClick={() => { setEditId(t.id); reset({ ...t, employee_id: String(t.employee_id) }); setShowForm(true); }}><Edit2 className="mr-1.5 h-4 w-4" />Edit</Button><Button className="flex-1" variant="destructive" size="sm" onClick={() => setTaskToDelete(t.id)}><Trash2 className="mr-1.5 h-4 w-4" />Delete</Button></div>
+                  <div className="flex gap-2"><Button className="flex-1" variant="outline" size="sm" onClick={() => openEditForm(t)}><Edit2 className="mr-1.5 h-4 w-4" />Edit</Button><Button className="flex-1" variant="destructive" size="sm" onClick={() => setTaskToDelete(t.id)}><Trash2 className="mr-1.5 h-4 w-4" />Delete</Button></div>
                 </CardContent>
               </Card>
             ))}
@@ -239,7 +271,7 @@ const Task = ({ employees }: any) => {
                 {tasks.filter((t: any) => (filterStatus === "All" || t.status === filterStatus) && (t.title.toLowerCase().includes(search.toLowerCase()) || t.code.toLowerCase().includes(search.toLowerCase()))).map((t: any) => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.id}</TableCell>
-                    <TableCell>{t.task_id}</TableCell>
+                    <TableCell>{t.code}</TableCell>
                     <TableCell>{t.title}</TableCell>
                     <TableCell>{getAssignedEmployeeLabel(employees, t.employee_id)}</TableCell>
                     <TableCell>{employees.find((e: any) => e.id === t.employee_id)?.designationId ?? "—"}</TableCell>
@@ -247,7 +279,7 @@ const Task = ({ employees }: any) => {
                     <TableCell>{t.priority}</TableCell>
                     <TableCell>{t.dueDate}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => { setEditId(t.id); reset({ ...t, employee_id: String(t.employee_id) }); setShowForm(true); }}><Edit2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEditForm(t)}><Edit2 className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setTaskToDelete(t.id)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
                     </TableCell>
                   </TableRow>
@@ -258,16 +290,11 @@ const Task = ({ employees }: any) => {
         </CardContent>
       </Card>
 
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={handleFormOpenChange}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? "Edit" : "Create"} Task</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate className="space-y-4 py-4">
             
-            <div className="space-y-1">
-              <Label>Task ID</Label>
-              <Input type="text" {...form.register("task_id" as any)} className={errors.task_id ? "border-red-500" : ""} />
-              {errors.task_id && <p className="text-xs text-red-500">{errors.task_id.message}</p>}
-            </div>
             <div className="space-y-1">
               <Label>Task Code</Label>
               <Input type="text" {...form.register("code" as any)} className={errors.code ? "border-red-500" : ""} />
@@ -280,7 +307,13 @@ const Task = ({ employees }: any) => {
             </div>
             <div className="space-y-1">
               <Label>Due Date</Label>
-              <Input type="date" {...form.register("dueDate" as any)} className={errors.dueDate ? "border-red-500" : ""} />
+              <Input
+                type="date"
+                min={getDueDateRange().minimum}
+                max={getDueDateRange().maximum}
+                {...form.register("dueDate" as any)}
+                className={errors.dueDate ? "border-red-500" : ""}
+              />
               {errors.dueDate && <p className="text-xs text-red-500">{errors.dueDate.message}</p>}
             </div>
 

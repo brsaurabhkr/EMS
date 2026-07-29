@@ -1,13 +1,11 @@
 const { z } = require("zod");
 
 const createEmployeeValidation = z.object({
-    id: z.number().int().positive(),
-
     employee_code: z.string().min(1),
 
     employee_name: z.string().min(2),
 
-    designation_id: z.number().int(),
+    designation_id: z.uuid("Designation ID must be a valid UUID"),
 
     email: z.string().email(),
 

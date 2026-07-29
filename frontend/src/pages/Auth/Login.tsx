@@ -1,8 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom"; // Link import kiya
+import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
+
+import api from "../../api/client";
 
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -21,12 +23,19 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: any) => {
-    if (data.email === "admin@gmail.com" && data.password === "Password@123") {
+  const onSubmit = async (data: { email: string; password: string }) => {
+    setLoginError("");
+
+    try {
+      const response = await api.post("/api/auth/login", data);
+      const { token, role } = response.data;
+
       localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
       navigate("/");
-    } else {
-      setLoginError("Invalid email or password.");
+    } catch (error: any) {
+      setLoginError(error.response?.data?.message || "Unable to log in. Please try again.");
     }
   };
 

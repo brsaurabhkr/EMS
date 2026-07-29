@@ -14,9 +14,7 @@ router.get("/", designationController.getDesignations);
 
 router.get("/:id", designationController.getDesignationById);
 
-router.post(
-    "/",
-    validate(createDesignationValidation),
+router.post("/",validate(createDesignationValidation),
     designationController.createDesignation
 );
 
