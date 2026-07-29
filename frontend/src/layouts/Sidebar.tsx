@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import { Sheet, SheetClose, SheetContent } from "../components/ui/sheet";
 
 const navItems = [
-  { name: "Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
+  { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
   { name: "Designation", path: "/designation", icon: <Briefcase size={20} /> },
   { name: "Employees", path: "/employees", icon: <Users size={20} /> },
   { name: "Tasks", path: "/tasks", icon: <ClipboardList size={20} /> },

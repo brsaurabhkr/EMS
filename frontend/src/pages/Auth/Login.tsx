@@ -33,7 +33,7 @@ const Login = () => {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       setLoginError(error.response?.data?.message || "Unable to log in. Please try again.");
     }

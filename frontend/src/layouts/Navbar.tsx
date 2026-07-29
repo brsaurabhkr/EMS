@@ -7,6 +7,8 @@ type NavbarProps = {
 };
 
 const Navbar = ({ onToggleSidebar }: NavbarProps) => {
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
       <div className="flex h-16 items-center px-4 md:px-8">
@@ -37,11 +39,13 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
 
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-4">
-         <Button className="h-10 cursor-pointer bg-sky-500 px-4 text-white transition-colors hover:bg-sky-600">
-            <Link to="/login">Login</Link>
-          </Button>
-        </div>
+        {!isLoggedIn && (
+          <div className="flex items-center gap-4">
+            <Button className="h-10 cursor-pointer bg-sky-500 px-4 text-white transition-colors hover:bg-sky-600">
+              <Link to="/login">Login</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );

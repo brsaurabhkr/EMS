@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 
 import "./index.css";
@@ -7,6 +7,9 @@ import "./index.css";
 import Navbar from "./layouts/Navbar";
 import Sidebar from "./layouts/Sidebar";
 
+import { getDesignations, type DesignationItem, type GetDesignationsResponse } from "./api/designation";
+import { getEmployees, type EmployeeItem, type GetEmployeesResponse } from "./api/employee";
+import { Toaster } from "./components/ui/sonner";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -14,11 +17,8 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Designations from "./pages/Designations/DesignationList";
 import Employee from "./pages/Employees/EmployeeList";
 import Tasks from "./pages/Tasks/TaskList";
-import { Toaster } from "./components/ui/sonner";
-import { useEmployeeStore } from "./store/employeeStore";
 import { useDesignationStore } from "./store/designationStore";
-import { getEmployees, type EmployeeItem, type GetEmployeesResponse } from "./api/employee";
-import { getDesignations, type DesignationItem, type GetDesignationsResponse } from "./api/designation";
+import { useEmployeeStore } from "./store/employeeStore";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -78,7 +78,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/designation" element={<Designations />} />
             <Route path="/employees" element={<Employee />}/>
             <Route path="/tasks" element={<Tasks employees={employees as any} />}/>

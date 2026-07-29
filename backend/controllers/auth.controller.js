@@ -24,6 +24,14 @@ const login = async (req, res) => {
     }
 
     // Compare password
+    if (typeof user.password !== "string" || !user.password) {
+      console.error(`User ${user.id} has no valid password hash`);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -53,7 +61,7 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Login failed:", error);
 
     return res.status(500).json({
       success: false,
