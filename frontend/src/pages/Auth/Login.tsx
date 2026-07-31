@@ -30,9 +30,9 @@ const Login = () => {
       const response = await api.post("/api/auth/login", data);
       const { token, role } = response.data;
 
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
+      sessionStorage.setItem("isLoggedIn", "true");
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("role", role);
       navigate("/dashboard");
     } catch (error: any) {
       setLoginError(error.response?.data?.message || "Unable to log in. Please try again.");

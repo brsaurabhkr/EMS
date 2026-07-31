@@ -1,15 +1,15 @@
-import { Briefcase, ClipboardList, LayoutDashboard, LogOut, Users } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ClipboardList, LayoutDashboard, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
 import { Sheet, SheetClose, SheetContent } from "../components/ui/sheet";
 
 const navItems = [
   { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
-  { name: "Designation", path: "/designation", icon: <Briefcase size={20} /> },
   { name: "Employees", path: "/employees", icon: <Users size={20} /> },
   { name: "Tasks", path: "/tasks", icon: <ClipboardList size={20} /> },
+  { name: "Role List", path: "/roles", icon: <ShieldCheck size={20} /> },
 ];
 
 type SidebarProps = {
@@ -42,7 +42,9 @@ const SidebarContent = ({ isMobile }: { isMobile?: boolean }) => {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
+    sessionStorage.removeItem("isLoggedIn");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("role");
     navigate("/login");
   };
 

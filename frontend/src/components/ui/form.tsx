@@ -3,7 +3,7 @@ import { Controller, type ControllerRenderProps, type FieldPath, type FieldValue
 import { cn } from "../../lib/utils";
 
 type FormProps<TFormValues extends FieldValues> = {
-  form: UseFormReturn<TFormValues>;
+  form?: UseFormReturn<TFormValues>;
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLDivElement>;
 

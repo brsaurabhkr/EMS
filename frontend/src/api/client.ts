@@ -1,8 +1,21 @@
 import axios from "axios";
 
 const api = axios.create({
-  // Vite proxies this path locally. In production set VITE_API_URL to the backend URL.
   baseURL: import.meta.env.VITE_API_URL || "",
 });
+
+// Automatically attach JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = sessionStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;

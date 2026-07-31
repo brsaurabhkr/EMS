@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { findUserByEmail } = require("../models/user.model");
+const roleModel = require("../models/role.model");
 
 const login = async (req, res) => {
   try {
@@ -41,6 +42,14 @@ const login = async (req, res) => {
       });
     }
 
+    const adminUser = ["admin", "administrator"].includes(String(user.role).toLowerCase());
+    let permissions = ["*"];
+    if (!adminUser) {
+      const role = await roleModel.findActiveByName(user.role);
+      if (!role) return res.status(403).json({ success: false, message: "Your role is inactive or has not been configured." });
+      permissions = await roleModel.getPermissions(role.id);
+    }
+
     // Generate JWT
     const token = jwt.sign(
       {
@@ -58,6 +67,7 @@ const login = async (req, res) => {
       message: "Login successful",
       token,
       role: user.role,
+      permissions,
     });
 
   } catch (error) {

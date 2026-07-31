@@ -7,7 +7,7 @@ type NavbarProps = {
 };
 
 const Navbar = ({ onToggleSidebar }: NavbarProps) => {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
 
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">

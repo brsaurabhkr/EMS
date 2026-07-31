@@ -14,8 +14,12 @@ import ForgotPassword from "./pages/Auth/ForgotPassword";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import Designations from "./pages/Designations/DesignationList";
+import DesignationList from "./pages/Designations/DesignationList";
 import Employee from "./pages/Employees/EmployeeList";
+import CreateRole from "./pages/Role/CreateRole";
+import EditRole from "./pages/Role/EditRole";
+import RoleList from "./pages/Role/RoleList";
+import RolePermission from "./pages/Role/RolePermission";
 import Tasks from "./pages/Tasks/TaskList";
 import { useDesignationStore } from "./store/designationStore";
 import { useEmployeeStore } from "./store/employeeStore";
@@ -80,9 +84,13 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/designation" element={<Designations />} />
+            <Route path="/roles" element={<RoleList />} />
+            <Route path="/roles/create" element={<CreateRole />} />
+            <Route path="/roles/edit/:id" element={<EditRole />} />
+            <Route path="/roles/:id/permissions" element={<RolePermission />} />
             <Route path="/employees" element={<Employee />}/>
             <Route path="/tasks" element={<Tasks employees={employees as any} />}/>
+            <Route path="/designations" element={<DesignationList />} />
           </Routes>
         </main>
       </div>
